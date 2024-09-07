@@ -5,7 +5,7 @@ import openai
 from Post import Post
 
 class Model:
-    def __init__(self, posts: Dict[str, Post]):
+    def __init__(self, posts: List[Post]):
         self.posts = posts
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -48,7 +48,7 @@ class Model:
     def get_closest_posts(self, embedding: List[float], k: int) -> List[Tuple[float, Post]]:
         distances = []
 
-        for post in self.posts.values():
+        for post in self.posts:
             similarity = self.cosine_similarity(embedding, post.embedding)
             distances.append((similarity, post))
 
