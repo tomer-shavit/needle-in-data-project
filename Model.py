@@ -9,8 +9,10 @@ class Model:
         self.posts = posts
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    def predict_likes(self, title: str, k: int = 10) -> float:
-        embedding = self.create_embedding(title)
+    def predict_likes(self, title: str, k: int = 10, embedding=None) -> float:
+        if not embedding:
+            embedding = self.create_embedding(title)
+
         closest_posts = self.get_closest_posts(embedding, k)
 
         # Calculate the weighted average of likes
@@ -27,10 +29,11 @@ class Model:
 
         return weighted_sum / total_weight
 
-    def predict_comments(self, title: str, k: int = 10) -> float:
-        embedding = self.create_embedding(title)
-        closest_posts = self.get_closest_posts(embedding, k)
+    def predict_comments(self, title: str, k: int = 10, embedding=None) -> float:
+        if not embedding:
+            embedding = self.create_embedding(title)
 
+        closest_posts = self.get_closest_posts(embedding, k)
         # Calculate the weighted average of comments
         total_weight = 0.0
         weighted_sum = 0.0
@@ -70,7 +73,7 @@ class Model:
 
         return dot_product / (norm_vec1 * norm_vec2)
 
-    def create_embedding(self, text: str) -> List[float]:
+    def create_embedding(self, text: str, ) -> List[float]:
         response = openai.Embedding.create(
             model="text-embedding-3-small",
             input=text
