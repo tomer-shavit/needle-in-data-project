@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import re
 
 class Model:
-    def __init__(self, posts: List[Post], alpha=0.5):
+    def __init__(self, posts: List[Post], alpha=0.1):
         self.posts = posts
         openai.api_key = os.getenv("OPENAI_API_KEY")
         self.alpha = alpha
