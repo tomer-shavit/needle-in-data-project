@@ -147,10 +147,31 @@ def plot_average_metrics(df, color_map):
     plt.show()
 
 
+# Function to convert shorthand numbers (e.g., 10k, 2m) to absolute numbers
+def convert_to_number(value):
+    if isinstance(value, str):
+        value = value.lower()  # Convert to lowercase for consistency
+        if 'k' in value:
+            return float(value.replace('k', '')) * 1_000
+        elif 'm' in value:
+            return float(value.replace('m', '')) * 1_000_000
+        elif 'b' in value:
+            return float(value.replace('b', '')) * 1000000000
+    return float(value)  # Return the value as a float if no conversion is needed
+
 
 
 if __name__ == "__main__":
     df = pd.read_csv('combined_cleaned_news.csv')
+
+    # Apply the conversion function to the 'Upvotes' and 'Comments' columns
+    df['Upvotes'] = df['Upvotes'].apply(convert_to_number)
+    df['Comments'] = df['Comments'].apply(convert_to_number)
+
+    # Save the modified DataFrame back to a new CSV (optional)
+    df.to_csv('modified_file.csv', index=False)
+
+
     df['Processed_Title'] = df['Title'].apply(preprocess_title)
 
     all_words = [word for title in df['Processed_Title'] for word in title]
