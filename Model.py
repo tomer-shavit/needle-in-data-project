@@ -51,7 +51,8 @@ class Model:
 
         return weighted_sum / total_weight
 
-    def get_closest_posts(self, embedding: List[float], k: int, time) -> List[Tuple[float, Post]]:
+    def get_closest_posts(self, embedding: List[float], k: int, time: str) -> List[Tuple[float, Post]]:
+        time = self.parse_time_ago(time, datetime.now())
         distances = []
 
         for post in self.posts:
@@ -87,7 +88,6 @@ class Model:
         return 1.0 - normalized_time_diff
 
     def parse_time_ago(self, time_ago_str: str, current_time: datetime) -> datetime:
-        # Parse the 'time ago' string
         match = re.match(r"(\d+)\s*(day|month|year)s?\s*ago", time_ago_str.strip())
         if not match:
             return current_time  # Fallback to current time if the format is unexpected
