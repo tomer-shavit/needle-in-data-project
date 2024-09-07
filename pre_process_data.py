@@ -1,6 +1,4 @@
 import re
-
-
 import pandas as pd
 import nltk
 from nltk import WordNetLemmatizer, word_tokenize
@@ -9,11 +7,9 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from collections import defaultdict
 
-
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
-
 
 category_mapping = {
     'Politics/Government': ['biden', 'trump', 'ukraine', 'russia', 'russian', 'population',
@@ -38,10 +34,11 @@ category_mapping = {
     'Education': ['school', 'student', 'college', 'teacher', 'study'],
     'Lifestyle': ['life', 'restaurant', 'lifestyle', 'home', 'house', 'marri', 'book', 'therapy'],
     'Animals': ['dog', 'animal', 'elephant', 'cat', 'pet', 'cow']
-
-
 }
 
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+pattern = r'[(].*\.com[)]'
 
 def get_color_map(categories):
     unique_categories = list(categories)
@@ -51,8 +48,6 @@ def get_color_map(categories):
     colors = [cmap(i / num_categories) for i in range(num_categories)]
     color_map = {category: colors[i] for i, category in enumerate(unique_categories)}
     return color_map
-
-
 
 
 # Function to clean and convert formatted strings to numeric values
@@ -84,28 +79,20 @@ def categorize_title(title):
 
 
 def preprocess_title(title):
-    pattern = r'[(].*\.com[)]'
-    # Function to clean titles by removing words matching the pattern
     cleaned_title = re.sub(pattern, '', title)
     cleaned_title = ' '.join(cleaned_title.split())  # Remove extra spaces
-    # Tokenize
     words = word_tokenize(cleaned_title.lower())
-    # Remove stopwords and non-alphabetic words
     words = [word for word in words if word.isalpha() and word not in stop_words]
-    # Lemmatize words
     words = [lemmatizer.lemmatize(word) for word in words]
     return words
 
 
 def plot_pie_chart(category_count, color_map):
-    # Prepare data for the pie chart
     labels = list(category_count.keys())
     sizes = list(category_count.values())
 
-    # Use the color map to get the colors for each category
     colors = [color_map[label] for label in labels]
 
-    # Plot the pie chart
     plt.figure(figsize=(10, 7))
     plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=colors, textprops={'fontsize': 12})
     plt.title('Distribution of Titles by Category', fontsize=16)
@@ -153,12 +140,9 @@ def plot_average_metrics(df, color_map):
     plt.yticks(fontsize=12)
     plt.tight_layout()
 
-
-    # Adding labels to bars (no "K" needed for comments)
     for bar in bars:
         yval = bar.get_height()
         plt.text(bar.get_x() + bar.get_width()/2, yval + 0.05, round(yval, 1), ha='center', va='bottom', fontsize=10)
-
 
     plt.show()
 
@@ -167,41 +151,18 @@ def plot_average_metrics(df, color_map):
 
 if __name__ == "__main__":
     df = pd.read_csv('combined_cleaned_news.csv')
-    # Preprocessing
-    lemmatizer = WordNetLemmatizer()
-    stop_words = set(stopwords.words('english'))
-
-
-    # Apply preprocessing to titles
     df['Processed_Title'] = df['Title'].apply(preprocess_title)
 
-
-    # Flatten the list of words and count frequency
     all_words = [word for title in df['Processed_Title'] for word in title]
     word_counts = Counter(all_words)
 
-
-    # Get the top 10 topics
-    top_topics = word_counts.most_common(200)
-
-
-    for tuple in top_topics:
-        print(tuple)
-    # Apply the function to categorize titles
     df['Categories'] = df['Title'].apply(categorize_title)
 
-
-    # Count titles for each category
     category_count = defaultdict(int)
     for categories in df['Categories']:
         for category in categories:
             category_count[category] += 1
     color_map = get_color_map(category_count.keys())
     plot_pie_chart(category_count, color_map)
-
-    # Display the results
-    for category, count in category_count.items():
-        print(f"{category}: {count} titles")
-
 
     plot_average_metrics(df, color_map)
