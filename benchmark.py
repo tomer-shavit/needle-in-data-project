@@ -3,13 +3,14 @@ import os
 import json
 import csv
 import matplotlib.pyplot as plt
-from collections import defaultdict
 from Post import Post
 from Model import Model
 
 # Initialize the random seed for reproducibility
 RANDOM_SEED = Model.RANDOM_SEED
 random.seed(RANDOM_SEED)
+MAX_ITERATION = 3
+
 
 def load_posts(csv_file, json_file):
     """
@@ -60,18 +61,12 @@ def load_posts(csv_file, json_file):
 # Load posts from files
 posts = load_posts('modified_file.csv', 'titles_embeddings.json')
 
-# Constants for testing
-amount_of_test_per_category = 5  # Number of posts to sample per category
-categories = list(Post.category_mapping.keys())  # List of available categories
+amount_of_test_per_iteration = 5
 
 # Ensure the output directory exists
 output_dir = './data/'
 os.makedirs(output_dir, exist_ok=True)
 
-# Group posts by their category
-posts_by_category = defaultdict(list)
-for post in posts:
-    posts_by_category[post.category].append(post)
 
 def calc_loss(prediction, actual, amount):
     """
@@ -87,25 +82,33 @@ def calc_loss(prediction, actual, amount):
     """
     return abs(prediction - actual) / amount
 
-# Iterate over each category for evaluation
-for category in categories:
-    # Skip categories with insufficient posts for testing
-    if len(posts_by_category[category]) < amount_of_test_per_category:
-        print(f"Not enough posts in category {category}")
-        continue
 
+def plot_data(y_label, data, predicted_data):
+    x = range(len(post_ids))
+    bar_width = 0.3
+    plt.figure(figsize=(10, 6))
+    plt.bar([p - 0.5 * bar_width for p in x], data, width=bar_width, label=y_label)
+    plt.bar([p + 0.5 * bar_width for p in x], predicted_data, width=bar_width, label="Predicted Likes")
+    plt.xticks(x, post_ids)
+    plt.xlabel('Post ID')
+    plt.ylabel(y_label)
+    plt.title(f'{y_label} Comparison for iteration {i+1}')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f'{i+1}_{y_label.lower()}_comparison.png'))
+    plt.close()
+
+
+for i in range(MAX_ITERATION):
     # Randomly sample posts for testing and separate the remaining for training
-    sampled_posts = random.sample(posts_by_category[category], amount_of_test_per_category)
+    sampled_posts = random.sample(posts, amount_of_test_per_iteration)
     posts_without_sampled = [post for post in posts if post not in sampled_posts]
 
-    # Initialize the model using non-sampled posts
     model = Model(posts_without_sampled)
 
-    # Accumulators for actual and predicted likes/comments
     sum_likes = sum_comments = 0
     sum_likes_predicted = sum_comments_predicted = 0
 
-    # Lists for plotting
     post_ids = []
     likes_data = []
     predicted_likes_data = []
@@ -122,49 +125,16 @@ for category in categories:
         sum_comments += post.comments
         sum_comments_predicted += predicted_comments
 
-        # Collect data for plotting
         post_ids.append(post.idx)
         likes_data.append(post.upvotes)
         predicted_likes_data.append(predicted_likes)
         comments_data.append(post.comments)
         predicted_comments_data.append(predicted_comments)
 
-    # Calculate and display prediction loss
-    loss_likes = calc_loss(sum_likes_predicted, sum_likes, amount_of_test_per_category)
-    loss_comments = calc_loss(sum_comments_predicted, sum_comments, amount_of_test_per_category)
-    print(f"Category {category}: Likes Loss: {loss_likes}, Comments Loss: {loss_comments}")
+    loss_likes = calc_loss(sum_likes_predicted, sum_likes, amount_of_test_per_iteration)
+    loss_comments = calc_loss(sum_comments_predicted, sum_comments, amount_of_test_per_iteration)
+    print(f"Iteration {i}: Likes Loss: {loss_likes}, Comments Loss: {loss_comments}")
 
-    # Plot comparison for Likes
-    x = range(len(post_ids))  # X-axis indices for the posts
-    bar_width = 0.3  # Width of each bar in the bar chart
+    plot_data('Likes', likes_data, predicted_likes_data)
+    plot_data('Comments', comments_data, predicted_comments_data)
 
-    plt.figure(figsize=(10, 6))
-    plt.bar([p - 0.5 * bar_width for p in x], likes_data, width=bar_width, label="Likes")
-    plt.bar([p + 0.5 * bar_width for p in x], predicted_likes_data, width=bar_width, label="Predicted Likes")
-
-    plt.xticks(x, post_ids)
-    plt.xlabel('Post ID')
-    plt.ylabel('Likes')
-    plt.title(f'Likes Comparison for Category: {category}')
-    plt.legend()
-    plt.tight_layout()
-
-    # Save the Likes comparison plot
-    plt.savefig(os.path.join(output_dir, f'{category[:5]}_likes_comparison.png'))
-    plt.close()
-
-    # Plot comparison for Comments
-    plt.figure(figsize=(10, 6))
-    plt.bar([p - 0.5 * bar_width for p in x], comments_data, width=bar_width, label="Comments")
-    plt.bar([p + 0.5 * bar_width for p in x], predicted_comments_data, width=bar_width, label="Predicted Comments")
-
-    plt.xticks(x, post_ids)
-    plt.xlabel('Post ID')
-    plt.ylabel('Comments')
-    plt.title(f'Comments Comparison for Category: {category}')
-    plt.legend()
-    plt.tight_layout()
-
-    # Save the Comments comparison plot
-    plt.savefig(os.path.join(output_dir, f'{category[:5]}_comments_comparison.png'))
-    plt.close()
