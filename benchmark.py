@@ -92,7 +92,7 @@ def plot_data(y_label, data, predicted_data):
     plt.xticks(x, post_ids)
     plt.xlabel('Post ID')
     plt.ylabel(y_label)
-    plt.title(f'{y_label} Comparison for iteration {i+1}')
+    plt.title(f'{y_label} Comparison For Iteration {i+1}')
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, f'{i+1}_{y_label.lower()}_comparison.png'))
