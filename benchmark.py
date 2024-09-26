@@ -64,7 +64,7 @@ posts = load_posts('modified_file.csv', 'titles_embeddings.json')
 amount_of_test_per_iteration = 5
 
 # Ensure the output directory exists
-output_dir = './data/'
+output_dir = './visualization/'
 os.makedirs(output_dir, exist_ok=True)
 
 
